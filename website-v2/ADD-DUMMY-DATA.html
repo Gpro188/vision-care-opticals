@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎉 Add Dummy Data - Vision Care</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #453982 0%, #2d2555 100%);
+            color: white;
+        }
+        .card {
+            background: white;
+            color: #333;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #453982;
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        .btn-add {
+            background: linear-gradient(135deg, #453982 0%, #2d2555 100%);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: block;
+            margin: 30px auto;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(69, 57, 130, 0.3);
+        }
+        .btn-add:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(69, 57, 130, 0.5);
+        }
+        .data-list {
+            background: #f9f9f9;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        .data-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #453982;
+        }
+        .data-icon {
+            font-size: 2rem;
+            margin-right: 20px;
+        }
+        .data-info {
+            flex: 1;
+        }
+        .data-count {
+            background: #453982;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .success {
+            background: #4CAF50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.2rem;
+            display: none;
+        }
+        .actions {
+            display: flex;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .btn-action {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-admin {
+            background: #453982;
+            color: white;
+        }
+        .btn-website {
+            background: #2e7d32;
+            color: white;
+        }
+        .btn-clear {
+            background: #f44336;
+            color: white;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🎉 Add Dummy Data</h1>
+        <p class="subtitle">Populate your website with sample content for testing</p>
+        
+        <button class="btn-add" onclick="addDummyData()">
+            ✨ Add All Dummy Data
+        </button>
+        
+        <div class="success" id="successMsg">
+            ✅ Dummy data added successfully! You can now view your website.
+        </div>
+        
+        <div class="data-list">
+            <h3 style="margin-top: 0; color: #453982;">What Will Be Added:</h3>
+            
+            <div class="data-item">
+                <div class="data-icon">🏠</div>
+                <div class="data-info">
+                    <strong>Hero Section</strong>
+                    <p style="margin: 5px 0; color: #666;">Welcome message and subtitle</p>
+                </div>
+                <div class="data-count">1 section</div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-icon">🎬</div>
+                <div class="data-info">
+                    <strong>Slider Banners</strong>
+                    <p style="margin: 5px 0; color: #666;">Rotating promotional banners</p>
+                </div>
+                <div class="data-count">3 slides</div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-icon">🏷️</div>
+                <div class="data-info">
+                    <strong>Brands Carousel</strong>
+                    <p style="margin: 5px 0; color: #666;">Premium eyewear brands</p>
+                </div>
+                <div class="data-count">8 brands</div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-icon">✨</div>
+                <div class="data-info">
+                    <strong>Latest Frames</strong>
+                    <p style="margin: 5px 0; color: #666;">New arrivals collection</p>
+                </div>
+                <div class="data-count">4 frames</div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-icon">🔥</div>
+                <div class="data-info">
+                    <strong>Trending Frames</strong>
+                    <p style="margin: 5px 0; color: #666;">Popular styles</p>
+                </div>
+                <div class="data-count">3 frames</div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-icon">🔧</div>
+                <div class="data-info">
+                    <strong>Services</strong>
+                    <p style="margin: 5px 0; color: #666;">Vision care services</p>
+                </div>
+                <div class="data-count">5 services</div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-icon">📖</div>
+                <div class="data-info">
+                    <strong>About Section</strong>
+                    <p style="margin: 5px 0; color: #666;">Company information</p>
+                </div>
+                <div class="data-count">1 section</div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-icon">📞</div>
+                <div class="data-info">
+                    <strong>Contact Info</strong>
+                    <p style="margin: 5px 0; color: #666;">Address, phone, WhatsApp, hours</p>
+                </div>
+                <div class="data-count">Complete</div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-icon">📱</div>
+                <div class="data-info">
+                    <strong>Social Media Links</strong>
+                    <p style="margin: 5px 0; color: #666;">Facebook, Instagram, Twitter, WhatsApp</p>
+                </div>
+                <div class="data-count">4 links</div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-icon">📍</div>
+                <div class="data-info">
+                    <strong>Location Map</strong>
+                    <p style="margin: 5px 0; color: #666;">Google Maps integration</p>
+                </div>
+                <div class="data-count">1 location</div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="btn-action btn-admin" onclick="openAdmin()">🎛️ Open Admin Panel</button>
+            <button class="btn-action btn-website" onclick="openWebsite()">🌐 View Website</button>
+            <button class="btn-action btn-clear" onclick="clearData()">🗑️ Clear All Data</button>
+        </div>
+    </div>
+
+    <script src="add-dummy-data.js"></script>
+    <script>
+        function addDummyData() {
+            // Call the function from add-dummy-data.js
+            const data = addDummyData();
+            
+            // Show success message
+            document.getElementById('successMsg').style.display = 'block';
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Auto-hide success after 5 seconds
+            setTimeout(() => {
+                document.getElementById('successMsg').style.display = 'none';
+            }, 5000);
+        }
+        
+        function openAdmin() {
+            window.location.href = 'admin.html';
+        }
+        
+        function openWebsite() {
+            window.location.href = 'index.html';
+        }
+        
+        function clearData() {
+            if (confirm('This will delete ALL data. Are you sure?')) {
+                localStorage.removeItem('visionCareAdminData');
+                localStorage.removeItem('visionCareData');
+                alert('All data cleared! Refresh admin panel.');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

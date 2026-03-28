@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Appointment Booking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #25d366;
+        }
+        .result {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+            border: 2px solid #2196F3;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #4CAF50;
+        }
+        button {
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+        }
+        .appointment-card {
+            background: white;
+            border: 2px solid #25d366;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .info-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Test Appointment Booking</h1>
+        
+        <div class="info-box">
+            <strong>ℹ️ What this tests:</strong><br>
+            This page tests the "Book Appointment" functionality that sends a message to your WhatsApp number.<br><br>
+            <strong>Expected behavior:</strong> Opens WhatsApp with a pre-filled appointment request message to +91 9961210556
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 1: Check Configuration</h2>
+            <p>Verify that your WhatsApp number is loaded correctly:</p>
+            <button onclick="checkConfiguration()">✅ Check WhatsApp Number</button>
+            <div id="configResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 2: Test Book Appointment Function</h2>
+            <p>Click the button below to test booking an appointment:</p>
+            
+            <div class="appointment-card">
+                <h3>🏥 Vision Care Appointment</h3>
+                <p>Book an appointment for eye examination, frame fitting, or any other service.</p>
+                <button onclick="testBookAppointment()">📅 Book Appointment via WhatsApp</button>
+            </div>
+            
+            <div id="appointmentResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 3: View Message Preview</h2>
+            <p>See exactly what message will be sent:</p>
+            <button onclick="showMessagePreview()">👁️ Show Message Preview</button>
+            <div id="messagePreview"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 4: Test from Main Website</h2>
+            <p>After testing here, try it on the actual website:</p>
+            <button onclick="openMainWebsite()">🌐 Open Main Website</button>
+            <div id="mainWebsiteResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load data-loader.js
+        const script = document.createElement('script');
+        script.src = 'data-loader.js?v=' + new Date().getTime();
+        document.head.appendChild(script);
+        
+        script.onload = function() {
+            console.log('✅ Data loader loaded successfully');
+        };
+        
+        // Check configuration
+        function checkConfiguration() {
+            const resultDiv = document.getElementById('configResult');
+            resultDiv.innerHTML = '<p>Loading...</p>';
+            
+            getAdminData().then(function(data) {
+                const whatsappNumber = (data && data.contact && data.contact.whatsapp) || '+919961210556';
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    ✅ Configuration loaded successfully!<br><br>
+                    <strong>WhatsApp Number:</strong> ${whatsappNumber}<br>
+                    <strong>Clean Number:</strong> ${whatsappNumber.replace(/\s/g, '')}<br><br>
+                    <strong>All Contact Info:</strong><br>
+                    📍 ${data.contact.address}<br>
+                    📞 ${data.contact.phone}<br>
+                    💬 ${data.contact.whatsapp}<br>
+                    ✉️ ${data.contact.email}<br>
+                    🕐 ${data.contact.hours}
+                `;
+                
+                console.log('Config Check - Number:', whatsappNumber);
+                console.log('Config Check - Full Data:', data.contact);
+            });
+        }
+        
+        // Test book appointment
+        function testBookAppointment() {
+            const resultDiv = document.getElementById('appointmentResult');
+            
+            // Get WhatsApp number
+            getAdminData().then(function(data) {
+                const whatsappNumber = (data && data.contact && data.contact.whatsapp) || '+919961210556';
+                const cleanNumber = whatsappNumber.replace(/\s/g, '');
+                
+                // Build message
+                let message = '*Appointment Request - Vision Care*\n\n';
+                message += 'Hi! I would like to book an appointment for:\n\n';
+                message += '📅 *Service Needed:* [Please specify - Eye Test/Frame Fitting/Other]\n';
+                message += '👤 *My Name:* [Your Name]\n';
+                message += '📞 *My Phone:* [Your Phone Number]\n';
+                message += '🗓️ *Preferred Date:* [Preferred Date]\n';
+                message += '⏰ *Preferred Time:* [Morning/Afternoon/Evening]\n\n';
+                message += 'Please confirm the appointment. Thank you!';
+                
+                const encodedMessage = encodeURIComponent(message);
+                const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    ✅ Appointment booking test successful!<br><br>
+                    <strong>WhatsApp URL:</strong><br>
+                    <a href="${whatsappUrl}" target="_blank" style="color: #25d366; word-break: break-all;">${whatsappUrl}</a><br><br>
+                    <strong>Phone number used:</strong> ${cleanNumber}<br><br>
+                    <button onclick="window.open(whatsappUrl, '_blank')">🚀 Open WhatsApp Now</button>
+                `;
+                
+                console.log('Appointment Test - URL:', whatsappUrl);
+                console.log('Appointment Test - Number:', cleanNumber);
+            });
+        }
+        
+        // Show message preview
+        function showMessagePreview() {
+            const previewDiv = document.getElementById('messagePreview');
+            
+            const message = `*Appointment Request - Vision Care*
+
+Hi! I would like to book an appointment for:
+
+📅 *Service Needed:* [Please specify - Eye Test/Frame Fitting/Other]
+👤 *My Name:* [Your Name]
+📞 *My Phone:* [Your Phone Number]
+🗓️ *Preferred Date:* [Preferred Date]
+⏰ *Preferred Time:* [Morning/Afternoon/Evening]
+
+Please confirm the appointment. Thank you!`;
+            
+            previewDiv.className = 'result';
+            previewDiv.textContent = message;
+        }
+        
+        // Open main website
+        function openMainWebsite() {
+            const resultDiv = document.getElementById('mainWebsiteResult');
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `
+                🌐 Opening main website...<br><br>
+                <strong>Instructions:</strong><br>
+                1. On the homepage, click "Book Appointment" button<br>
+                2. It should open WhatsApp with appointment message<br>
+                3. Verify the number is +91 9961210556<br><br>
+                <button onclick="window.open('index.html', '_blank')">Open Website</button>
+            `;
+        }
+    </script>
+</body>
+</html>

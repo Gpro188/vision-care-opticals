@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Check Data - Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 { color: #453982; }
+        h2 { color: #2d2555; margin-top: 0; }
+        button {
+            background: #453982;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #2d2555; }
+        .success { background: #4CAF50; }
+        .error { background: #f44336; }
+        pre {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .status.good {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #4CAF50;
+        }
+        .status.bad {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .data-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #453982;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔍 Data Checker & Debugger</h1>
+        <p>This shows exactly what data is in localStorage and helps debug why it's not appearing on your website.</p>
+        
+        <button class="success" onclick="checkAllData()">🔄 Refresh All Data</button>
+        <button onclick="clearAndReload()">⚠️ Clear Cache & Reload Admin</button>
+        <button onclick="copyData()">📋 Copy Data</button>
+    </div>
+
+    <div class="card">
+        <h2>📊 Quick Status</h2>
+        <div id="quickStatus"></div>
+    </div>
+
+    <div class="card">
+        <h2>🗄️ Storage Keys Found</h2>
+        <div id="keysList" class="data-grid"></div>
+    </div>
+
+    <div class="card">
+        <h2>👁️ Vision Care Admin Data</h2>
+        <div id="adminDataStatus"></div>
+        <pre id="adminDataContent">Click "Refresh All Data" to check...</pre>
+    </div>
+
+    <div class="card">
+        <h2>💾 Vision Care Data (Backup)</h2>
+        <div id="backupDataStatus"></div>
+        <pre id="backupDataContent">Click "Refresh All Data" to check...</pre>
+    </div>
+
+    <div class="card">
+        <h2>🧩 Section Breakdown</h2>
+        <div id="sectionBreakdown" class="data-grid"></div>
+    </div>
+
+    <script>
+        function checkAllData() {
+            console.log('🔍 Checking all data...');
+            
+            // Get all localStorage keys
+            const allKeys = Object.keys(localStorage);
+            const keysDiv = document.getElementById('keysList');
+            
+            if (allKeys.length === 0) {
+                keysDiv.innerHTML = '<div class="data-item"><strong>❌ No data in localStorage!</strong></div>';
+            } else {
+                keysDiv.innerHTML = allKeys.map(key => `
+                    <div class="data-item">
+                        <strong>${key}</strong><br>
+                        <small>${localStorage.getItem(key)?.length || 0} characters</small>
+                    </div>
+                `).join('');
+            }
+            
+            // Check Vision Care Admin Data
+            checkVisionCareData('visionCareAdminData', 'adminDataStatus', 'adminDataContent');
+            
+            // Check Vision Care Backup Data
+            checkVisionCareData('visionCareData', 'backupDataStatus', 'backupDataContent');
+            
+            // Quick status
+            const adminData = localStorage.getItem('visionCareAdminData');
+            const backupData = localStorage.getItem('visionCareData');
+            
+            if (adminData || backupData) {
+                document.getElementById('quickStatus').innerHTML = `
+                    <div class="status good">
+                        ✅ Data found in localStorage!<br>
+                        visionCareAdminData: ${adminData ? '✅' : '❌'}<br>
+                        visionCareData: ${backupData ? '✅' : '❌'}<br>
+                        Last checked: ${new Date().toLocaleTimeString()}
+                    </div>
+                `;
+                
+                // Show section breakdown
+                if (adminData) {
+                    try {
+                        const data = JSON.parse(adminData);
+                        showSectionBreakdown(data);
+                    } catch (e) {
+                        console.error('Error parsing admin data:', e);
+                    }
+                }
+            } else {
+                document.getElementById('quickStatus').innerHTML = `
+                    <div class="status bad">
+                        ❌ No Vision Care data found!<br><br>
+                        <strong>Why?</strong><br>
+                        1. You haven't saved anything in admin panel yet<br>
+                        2. You're viewing this in a different browser than admin panel<br>
+                        3. Browser cache was cleared<br><br>
+                        <strong>Solution:</strong>
+                        <button class="success" onclick="window.location.href='admin.html'" style="margin-top: 10px;">
+                            🎛️ Open Admin Panel
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        function checkVisionCareData(key, statusId, contentId) {
+            const data = localStorage.getItem(key);
+            const statusDiv = document.getElementById(statusId);
+            const contentPre = document.getElementById(contentId);
+            
+            if (!data) {
+                statusDiv.innerHTML = '<div class="status bad">❌ Not found</div>';
+                contentPre.textContent = 'No data';
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(data);
+                statusDiv.innerHTML = '<div class="status good">✅ Found and valid!</div>';
+                
+                let summary = 'Data Summary:\n';
+                if (parsed.hero) summary += `- Hero: ${parsed.hero.title || 'No title'}\n`;
+                if (parsed.slider?.slides) summary += `- Slider: ${parsed.slider.slides.length} slides\n`;
+                if (parsed.brands) summary += `- Brands: ${parsed.brands.length} brands\n`;
+                if (parsed.frames?.latest) summary += `- Latest Frames: ${parsed.frames.latest.length}\n`;
+                if (parsed.frames?.trending) summary += `- Trending Frames: ${parsed.frames.trending.length}\n`;
+                if (parsed.services) summary += `- Services: ${parsed.services.length}\n`;
+                if (parsed.about) summary += `- About: ${parsed.about.title || 'No title'}\n`;
+                if (parsed.contact) summary += `- Contact: ${parsed.contact.address || 'No address'}\n`;
+                if (parsed.social) summary += `- Social: ${parsed.social.length} links\n`;
+                if (parsed.location) summary += `- Location: ${parsed.location.address || 'No address'}\n`;
+                
+                contentPre.textContent = summary + '\n' + JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                statusDiv.innerHTML = '<div class="status bad">❌ Error parsing data: ' + e.message + '</div>';
+                contentPre.textContent = data.substring(0, 500) + '... (truncated, invalid JSON)';
+            }
+        }
+        
+        function showSectionBreakdown(data) {
+            const container = document.getElementById('sectionBreakdown');
+            
+            let html = '';
+            
+            if (data.hero) {
+                html += `
+                    <div class="data-item">
+                        <strong>🏠 Hero Section</strong><br>
+                        Title: "${data.hero.title}"<br>
+                        Subtitle: "${data.hero.subtitle}"
+                    </div>
+                `;
+            }
+            
+            if (data.slider?.slides) {
+                html += `
+                    <div class="data-item">
+                        <strong>🎬 Slider Banners</strong><br>
+                        ${data.slider.slides.length} slides<br>
+                        Interval: ${data.slider.interval || 5}s
+                    </div>
+                `;
+            }
+            
+            if (data.brands) {
+                html += `
+                    <div class="data-item">
+                        <strong>🏷️ Brands</strong><br>
+                        ${data.brands.length} brands<br>
+                        ${data.brands.slice(0, 3).map(b => b.name).join(', ')}${data.brands.length > 3 ? '...' : ''}
+                    </div>
+                `;
+            }
+            
+            if (data.frames?.latest) {
+                html += `
+                    <div class="data-item">
+                        <strong>✨ Latest Frames</strong><br>
+                        ${data.frames.latest.length} frames
+                    </div>
+                `;
+            }
+            
+            if (data.frames?.trending) {
+                html += `
+                    <div class="data-item">
+                        <strong>🔥 Trending Frames</strong><br>
+                        ${data.frames.trending.length} frames
+                    </div>
+                `;
+            }
+            
+            if (data.services) {
+                html += `
+                    <div class="data-item">
+                        <strong>🔧 Services</strong><br>
+                        ${data.services.length} services
+                    </div>
+                `;
+            }
+            
+            if (data.about) {
+                html += `
+                    <div class="data-item">
+                        <strong>📖 About</strong><br>
+                        ${data.about.title}
+                    </div>
+                `;
+            }
+            
+            if (data.contact) {
+                html += `
+                    <div class="data-item">
+                        <strong>📞 Contact</strong><br>
+                        ${data.contact.phone || 'No phone'}<br>
+                        WhatsApp: ${data.contact.whatsapp || 'Not set'}
+                    </div>
+                `;
+            }
+            
+            if (data.social) {
+                html += `
+                    <div class="data-item">
+                        <strong>📱 Social Media</strong><br>
+                        ${data.social.length} links
+                    </div>
+                `;
+            }
+            
+            if (data.location) {
+                html += `
+                    <div class="data-item">
+                        <strong>📍 Location</strong><br>
+                        ${data.location.address || 'No address'}
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html || '<p>No sections found</p>';
+        }
+        
+        function clearAndReload() {
+            if (confirm('This will clear all localStorage data and reload admin panel. Continue?')) {
+                localStorage.clear();
+                window.location.href = 'admin.html';
+            }
+        }
+        
+        function copyData() {
+            const data = localStorage.getItem('visionCareAdminData');
+            if (data) {
+                navigator.clipboard.writeText(data).then(() => {
+                    alert('Data copied to clipboard! ✅');
+                });
+            } else {
+                alert('No data to copy! ❌');
+            }
+        }
+        
+        // Auto-check on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Data checker ready');
+            checkAllData();
+        });
+    </script>
+</body>
+</html>

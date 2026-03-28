@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test WhatsApp Number</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+        }
+        .result {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #2196F3;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #4CAF50;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #f44336;
+        }
+        button {
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            width: 100%;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .number-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #25d366;
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 WhatsApp Number Test</h1>
+        
+        <div class="test-section">
+            <h2>Step 1: Check data.json</h2>
+            <p>Loading your contact data...</p>
+            
+            <div id="dataCheck" class="result">Loading...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 2: Current WhatsApp Number</h2>
+            <div id="whatsappNumber" class="number-display">Checking...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 3: Test Cart Checkout</h2>
+            <p>This simulates what happens when someone orders from cart:</p>
+            <button onclick="testCartCheckout()">🛒 Test Cart Order</button>
+            <div id="cartTestResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 4: Test Frame Order</h2>
+            <p>This simulates what happens when someone orders a single frame:</p>
+            <button onclick="testFrameOrder()">📱 Test Frame Order</button>
+            <div id="frameTestResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 5: Clear Cache</h2>
+            <button onclick="clearCache()" style="background: #f44336;">🗑️ Clear Browser Cache</button>
+            <button onclick="hardRefresh()" style="background: #2196F3;">🔄 Hard Refresh (Ctrl+Shift+R)</button>
+        </div>
+    </div>
+
+    <script>
+        let whatsappNumber = '';
+        
+        // Load and check data on page load
+        window.addEventListener('load', async function() {
+            await checkDataJson();
+        });
+        
+        async function checkDataJson() {
+            const resultDiv = document.getElementById('dataCheck');
+            const numberDiv = document.getElementById('whatsappNumber');
+            
+            try {
+                // Add cache buster
+                const response = await fetch('data.json?t=' + new Date().getTime());
+                const data = await response.json();
+                
+                if (data.contact && data.contact.whatsapp) {
+                    whatsappNumber = data.contact.whatsapp;
+                    
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        ✅ Data loaded successfully!<br><br>
+                        <strong>Contact Info:</strong><br>
+                        📍 ${data.contact.address || 'N/A'}<br>
+                        📞 ${data.contact.phone || 'N/A'}<br>
+                        💬 WhatsApp: <strong>${data.contact.whatsapp}</strong><br>
+                        ✉️ ${data.contact.email || 'N/A'}
+                    `;
+                    
+                    numberDiv.textContent = whatsappNumber;
+                    numberDiv.style.color = '#25d366';
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = '❌ No WhatsApp number found in data.json!';
+                    numberDiv.textContent = 'Not configured';
+                    numberDiv.style.color = '#f44336';
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error loading data.json:<br>${error.message}<br><br>Make sure your data server is running!`;
+                numberDiv.textContent = 'Error loading';
+                numberDiv.style.color = '#f44336';
+            }
+        }
+        
+        function testCartCheckout() {
+            if (!whatsappNumber) {
+                alert('No WhatsApp number loaded!');
+                return;
+            }
+            
+            // Simulate cart checkout
+            const testMessage = '*New Order - Vision Care*\n\nCustomer Details:\n- Name: [Your Name]\n- Phone: [Your Phone]\n\nOrder Items:\n1. Test Frame - ₹150\n\n*Total: ₹150.00*\n\nPlease confirm my order. Thank you!';
+            
+            const encodedMessage = encodeURIComponent(testMessage);
+            const cleanNumber = whatsappNumber.replace(/\s/g, '');
+            const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+            
+            const resultDiv = document.getElementById('cartTestResult');
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `
+                ✅ Cart checkout test successful!<br><br>
+                <strong>WhatsApp URL:</strong><br>
+                <a href="${whatsappUrl}" target="_blank" style="color: #25d366; word-break: break-all;">${whatsappUrl}</a><br><br>
+                <strong>Phone number used:</strong> ${cleanNumber}<br><br>
+                <button onclick="window.open(whatsappUrl, '_blank')">🚀 Open WhatsApp Now</button>
+            `;
+            
+            console.log('Cart Test - URL:', whatsappUrl);
+            console.log('Cart Test - Number:', cleanNumber);
+        }
+        
+        function testFrameOrder() {
+            if (!whatsappNumber) {
+                alert('No WhatsApp number loaded!');
+                return;
+            }
+            
+            // Simulate frame order
+            const testMessage = '*Frame Inquiry - Vision Care*\n\nI am interested in this frame:\n\n📦 *Test Frame*\n💰 Price: ₹150\n\nPlease provide more details about this frame. Thank you!';
+            
+            const encodedMessage = encodeURIComponent(testMessage);
+            const cleanNumber = whatsappNumber.replace(/\s/g, '');
+            const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+            
+            const resultDiv = document.getElementById('frameTestResult');
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `
+                ✅ Frame order test successful!<br><br>
+                <strong>WhatsApp URL:</strong><br>
+                <a href="${whatsappUrl}" target="_blank" style="color: #25d366; word-break: break-all;">${whatsappUrl}</a><br><br>
+                <strong>Phone number used:</strong> ${cleanNumber}<br><br>
+                <button onclick="window.open(whatsappUrl, '_blank')">🚀 Open WhatsApp Now</button>
+            `;
+            
+            console.log('Frame Test - URL:', whatsappUrl);
+            console.log('Frame Test - Number:', cleanNumber);
+        }
+        
+        function clearCache() {
+            if (confirm('This will clear your browser cache. Continue?')) {
+                // Try to clear cache via Service Worker if available
+                if ('caches' in window) {
+                    caches.keys().then(function(names) {
+                        for (let name of names) caches.delete(name);
+                    });
+                }
+                
+                // Force reload
+                location.reload(true);
+            }
+        }
+        
+        function hardRefresh() {
+            alert('Press Ctrl + Shift + R (or Cmd + Shift + R on Mac) to hard refresh!\n\nOr just close this page and reopen it.');
+        }
+    </script>
+</body>
+</html>

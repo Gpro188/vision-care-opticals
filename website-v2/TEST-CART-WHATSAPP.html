@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cart & Appointment WhatsApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #25d366;
+        }
+        .result {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+            border: 2px solid #2196F3;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #4CAF50;
+        }
+        button {
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            width: 100%;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+        }
+        .frame-card {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .frame-image {
+            width: 200px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #f0f0f0;
+        }
+        .cart-item {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Cart & Appointment WhatsApp</h1>
+        
+        <div class="test-section">
+            <h2>Step 1: Check WhatsApp Number Configuration</h2>
+            <p>This tests if your WhatsApp number is loaded correctly:</p>
+            <button onclick="checkWhatsAppNumber()">✅ Check WhatsApp Number</button>
+            <div id="numberCheckResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 2: Test Frame Order (Individual)</h2>
+            <p>Click "Order on WhatsApp" for this test frame:</p>
+            
+            <div class="frame-card">
+                <img src="https://via.placeholder.com/300x200?text=Test+Frame" alt="Test Frame" class="frame-image">
+                <h3>Ray-Ban Aviator - Classic</h3>
+                <p><strong>Price:</strong> ₹150</p>
+                <button onclick="testSingleFrameOrder()">📱 Order on WhatsApp</button>
+            </div>
+            
+            <div id="frameOrderResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 3: Test Cart Checkout</h2>
+            <p>Add items to cart and checkout via WhatsApp:</p>
+            
+            <button onclick="addToTestCart()">➕ Add Test Item to Cart</button>
+            
+            <div id="testCart">
+                <h3>Test Cart Items:</h3>
+                <div id="cartItemsList">No items in test cart</div>
+            </div>
+            
+            <button onclick="testCartCheckout()" style="margin-top: 15px;">🛒 Checkout via WhatsApp</button>
+            
+            <div id="cartCheckoutResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Step 4: Debug Console</h2>
+            <p>Press F12 to open browser console and see detailed logs:</p>
+            <ul>
+                <li>📱 WhatsApp number being used</li>
+                <li>🔗 WhatsApp URL being opened</li>
+                <li>⚠️ Any errors or warnings</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Simulate shopping cart
+        let testCart = [];
+        
+        // Load data-loader.js functions
+        const script = document.createElement('script');
+        script.src = 'data-loader.js?v=' + new Date().getTime(); // Cache buster
+        document.head.appendChild(script);
+        
+        script.onload = function() {
+            console.log('✅ Data loader loaded successfully');
+        };
+        
+        // Check WhatsApp number
+        function checkWhatsAppNumber() {
+            const resultDiv = document.getElementById('numberCheckResult');
+            resultDiv.innerHTML = '<p>Loading...</p>';
+            
+            // Try to get data
+            getAdminData().then(function(data) {
+                const whatsappNumber = (data && data.contact && data.contact.whatsapp) || '+919961210556';
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    ✅ WhatsApp number loaded successfully!<br><br>
+                    <strong>Number:</strong> ${whatsappNumber}<br>
+                    <strong>Clean:</strong> ${whatsappNumber.replace(/\s/g, '')}<br><br>
+                    <strong>Contact Info:</strong><br>
+                    📍 ${data.contact.address}<br>
+                    📞 ${data.contact.phone}<br>
+                    💬 ${data.contact.whatsapp}<br>
+                    ✉️ ${data.contact.email}
+                `;
+                
+                console.log('WhatsApp Check - Number:', whatsappNumber);
+                console.log('WhatsApp Check - Full Data:', data.contact);
+            }).catch(function(error) {
+                resultDiv.className = 'result';
+                resultDiv.innerHTML = `
+                    ⚠️ Using emergency fallback number<br><br>
+                    <strong>Number:</strong> +919961210556<br>
+                    <em>This is hardcoded and will always work</em>
+                `;
+                console.log('Using emergency fallback number');
+            });
+        }
+        
+        // Test single frame order
+        function testSingleFrameOrder() {
+            const resultDiv = document.getElementById('frameOrderResult');
+            
+            // Get WhatsApp number
+            getAdminData().then(function(data) {
+                const whatsappNumber = (data && data.contact && data.contact.whatsapp) || '+919961210556';
+                const cleanNumber = whatsappNumber.replace(/\s/g, '');
+                
+                const message = '*Frame Inquiry - Vision Care*\n\n' +
+                    'I am interested in this frame:\n\n' +
+                    '📦 *Ray-Ban Aviator - Classic*\n' +
+                    '💰 Price: ₹150\n' +
+                    '\nPlease provide more details about this frame. Thank you!';
+                
+                const encodedMessage = encodeURIComponent(message);
+                const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    ✅ Frame order test successful!<br><br>
+                    <strong>WhatsApp URL:</strong><br>
+                    <a href="${whatsappUrl}" target="_blank" style="color: #25d366; word-break: break-all;">${whatsappUrl}</a><br><br>
+                    <strong>Phone number used:</strong> ${cleanNumber}<br><br>
+                    <button onclick="window.open(whatsappUrl, '_blank')">🚀 Open WhatsApp Now</button>
+                `;
+                
+                console.log('Frame Order Test - URL:', whatsappUrl);
+                console.log('Frame Order Test - Number:', cleanNumber);
+            });
+        }
+        
+        // Add to test cart
+        function addToTestCart() {
+            testCart.push({
+                name: 'Ray-Ban Aviator',
+                price: 150
+            });
+            
+            updateTestCartDisplay();
+        }
+        
+        // Update cart display
+        function updateTestCartDisplay() {
+            const cartDiv = document.getElementById('cartItemsList');
+            
+            if (testCart.length === 0) {
+                cartDiv.innerHTML = 'No items in test cart';
+                return;
+            }
+            
+            let html = '';
+            testCart.forEach((item, index) => {
+                html += `
+                    <div class="cart-item">
+                        <span>${index + 1}. ${item.name}</span>
+                        <span>₹${item.price}</span>
+                    </div>
+                `;
+            });
+            
+            cartDiv.innerHTML = html;
+        }
+        
+        // Test cart checkout
+        function testCartCheckout() {
+            if (testCart.length === 0) {
+                alert('Your test cart is empty! Click "Add Test Item to Cart" first.');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('cartCheckoutResult');
+            
+            // Get WhatsApp number
+            getAdminData().then(function(data) {
+                const whatsappNumber = (data && data.contact && data.contact.whatsapp) || '+919961210556';
+                const cleanNumber = whatsappNumber.replace(/\s/g, '');
+                
+                // Build message
+                let message = '*New Order - Vision Care*\n\n';
+                message += 'Customer Details:\n';
+                message += '- Name: [Your Name]\n';
+                message += '- Phone: [Your Phone]\n\n';
+                message += 'Order Items:\n';
+                
+                let total = 0;
+                testCart.forEach((item, index) => {
+                    message += `${index + 1}. ${item.name} - ₹${item.price}\n`;
+                    total += item.price;
+                });
+                
+                message += `\n*Total: ₹${total.toFixed(2)}*`;
+                message += '\n\nPlease confirm my order. Thank you!';
+                
+                const encodedMessage = encodeURIComponent(message);
+                const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    ✅ Cart checkout test successful!<br><br>
+                    <strong>WhatsApp URL:</strong><br>
+                    <a href="${whatsappUrl}" target="_blank" style="color: #25d366; word-break: break-all;">${whatsappUrl}</a><br><br>
+                    <strong>Phone number used:</strong> ${cleanNumber}<br>
+                    <strong>Total items:</strong> ${testCart.length}<br>
+                    <strong>Total price:</strong> ₹${total.toFixed(2)}<br><br>
+                    <button onclick="window.open(whatsappUrl, '_blank')">🚀 Open WhatsApp Now</button>
+                `;
+                
+                console.log('Cart Checkout Test - URL:', whatsappUrl);
+                console.log('Cart Checkout Test - Number:', cleanNumber);
+                console.log('Cart Checkout Test - Message:', message);
+            });
+        }
+    </script>
+</body>
+</html>

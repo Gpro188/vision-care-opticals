@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision Care - Contact</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+        }
+        .contact-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #25d366;
+        }
+        .contact-item {
+            font-size: 18px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .emoji {
+            font-size: 24px;
+        }
+        .whatsapp-link {
+            color: #25d366;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .whatsapp-link:hover {
+            text-decoration: underline;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .status {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 5px solid #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📞 Vision Care Contact Information</h1>
+        
+        <div class="status">
+            <strong>ℹ️ Emergency Mode:</strong> This page works WITHOUT the data server running.<br>
+            Contact information is hardcoded here for emergencies only.
+        </div>
+        
+        <div class="contact-card">
+            <h2 style="margin-top: 0;">Contact Details</h2>
+            
+            <div class="contact-item">
+                <span class="emoji">📍</span>
+                <span><strong>Address:</strong> Parambil Peedika</span>
+            </div>
+            
+            <div class="contact-item">
+                <span class="emoji">📞</span>
+                <span><strong>Phone:</strong> +91 9961210556</span>
+            </div>
+            
+            <div class="contact-item">
+                <span class="emoji">💬</span>
+                <span><strong>WhatsApp:</strong> 
+                    <a href="https://wa.me/919961210556" class="whatsapp-link" target="_blank">
+                        +91 9961210556
+                    </a>
+                </span>
+            </div>
+            
+            <div class="contact-item">
+                <span class="emoji">✉️</span>
+                <span><strong>Email:</strong> vcopticalsparambilpeedika@gmail.com</span>
+            </div>
+            
+            <div class="contact-item">
+                <span class="emoji">🕐</span>
+                <span><strong>Hours:</strong> Mon-Sat: 9:00 AM - 7:30 PM</span>
+            </div>
+            
+            <a href="https://wa.me/919961210556?text=Hi%20Vision%20Care!%20I%20would%20like%20to%20inquire%20about%20your%20services." 
+               class="button" 
+               target="_blank">
+                💬 Chat on WhatsApp
+            </a>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 10px; border-left: 5px solid #ffc107;">
+            <h3 style="margin-top: 0;">⚠️ Important Note</h3>
+            <p>This is an emergency contact page that works without the data server.</p>
+            <p><strong>For full website functionality:</strong></p>
+            <ol>
+                <li>Make sure data server is running</li>
+                <li>Open START-SERVER.bat or CHECK-AND-START-SERVER.bat</li>
+                <li>Keep server window open</li>
+                <li>Then open main website: index.html</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recover Missing Slider Banners</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #453982; }
+        h2 { color: #2196F3; margin-top: 0; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        button.danger { background: #f44336; }
+        button.danger:hover { background: #da190b; }
+        button.info { background: #2196F3; }
+        button.info:hover { background: #1976D2; }
+        .result {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            border-left: 4px solid #2196F3;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border-left: 4px solid #ffc107;
+        }
+        .success {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border-left: 4px solid #4CAF50;
+        }
+        .slide-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #453982;
+        }
+        .count {
+            font-size: 24px;
+            font-weight: bold;
+            color: #453982;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Slider Banner Recovery Tool</h1>
+    
+    <div class="card">
+        <h2>Step 1: Check Current Status</h2>
+        <p>Checking how many slides are saved in different locations...</p>
+        
+        <div id="statusCheck"></div>
+        
+        <button onclick="checkStatus()" class="info">🔄 Refresh Status</button>
+    </div>
+    
+    <div class="card">
+        <h2>Step 2: Recover Missing Banners</h2>
+        <p>If you added 5 banners but only see 2 saved, your missing banners might be in browser storage.</p>
+        
+        <div id="localStorageCheck"></div>
+        
+        <button onclick="recoverFromLocalStorage()" class="info">♻️ Recover from Browser Storage</button>
+    </div>
+    
+    <div class="card">
+        <h2>Step 3: Add Missing Banners Manually</h2>
+        <p>If recovery doesn't work, you can add the missing banners here:</p>
+        
+        <div id="addBannerForm" style="display: none;">
+            <label>Banner Title:</label>
+            <input type="text" id="bannerTitle" placeholder="Enter title" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px;">
+            
+            <label>Background Color:</label>
+            <input type="color" id="bannerColor" value="#453982" style="width: 100px; padding: 5px; margin: 5px 0;">
+            
+            <button onclick="addBanner()" style="margin-top: 10px;">➕ Add Banner</button>
+        </div>
+        
+        <div id="manualSlidesList"></div>
+        
+        <button onclick="showAddForm()" class="info">➕ Show Add Form</button>
+        <button onclick="saveAllSlides()" style="margin-top: 10px;">💾 Save All Slides to File</button>
+    </div>
+    
+    <div class="card">
+        <h2>Step 4: Verify & Test</h2>
+        <p>After recovering/adding banners, verify they're saved correctly:</p>
+        
+        <button onclick="verifySave()" class="info">✅ Verify Save</button>
+        <button onclick="openWebsite()" class="info">🌐 Open Website to Test</button>
+        
+        <div id="verifyResult"></div>
+    </div>
+
+    <script>
+        const DATA_SERVER_URL = 'http://localhost:3456/api/data';
+        let allSlides = [];
+        
+        // Check status on load
+        window.addEventListener('load', checkStatus);
+        
+        async function checkStatus() {
+            const statusDiv = document.getElementById('statusCheck');
+            statusDiv.innerHTML = '<p>📡 Checking server...</p>';
+            
+            try {
+                // Check server
+                const response = await fetch(DATA_SERVER_URL);
+                const data = await response.json();
+                
+                const fileSlideCount = data.slider?.slides?.length || 0;
+                
+                let html = `
+                    <div class="success">
+                        <strong>✅ Server is running!</strong><br><br>
+                        <span class="count">${fileSlideCount}</span> slides saved in data.json file<br><br>
+                        <strong>Expected:</strong> 5 slides<br>
+                        <strong>Missing:</strong> ${5 - fileSlideCount} slides
+                    </div>
+                `;
+                
+                if (fileSlideCount === 0) {
+                    html += `<div class="warning">⚠️ No slides found in file! You need to add or recover slides.</div>`;
+                } else if (fileSlideCount < 5) {
+                    html += `<div class="warning">⚠️ Only ${fileSlideCount} slides found. You mentioned adding 5 banners.</div>`;
+                } else {
+                    html += `<div class="success">🎉 All slides are present!</div>`;
+                }
+                
+                // List current slides
+                if (data.slider?.slides) {
+                    html += `<h3>Current Slides in File:</h3>`;
+                    data.slider.slides.forEach((slide, i) => {
+                        html += `
+                            <div class="slide-item">
+                                <strong>Slide ${i + 1}:</strong> ${slide.title || 'Untitled'}<br>
+                                <small>Color: ${slide.bgColor || 'default'} | Size: ${slide.imageSize?.width || '?'}x${slide.imageSize?.height || '?'}px</small>
+                            </div>
+                        `;
+                    });
+                }
+                
+                statusDiv.innerHTML = html;
+                allSlides = data.slider?.slides || [];
+                
+                // Also check localStorage
+                checkLocalStorage();
+                
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="warning">
+                        ❌ Server is NOT running!<br><br>
+                        <strong>Error:</strong> ${error.message}<br><br>
+                        <strong>Solution:</strong>
+                        <ol>
+                            <li>Close this page</li>
+                            <li>Double-click START-SERVER.bat in vision care folder</li>
+                            <li>Keep server window OPEN</li>
+                            <li>Refresh this page</li>
+                        </ol>
+                    </div>
+                `;
+            }
+        }
+        
+        function checkLocalStorage() {
+            const lsDiv = document.getElementById('localStorageCheck');
+            
+            try {
+                const stored = localStorage.getItem('visionCareAdminData') || localStorage.getItem('visionCareData');
+                
+                if (stored) {
+                    const localData = JSON.parse(stored);
+                    const localSlideCount = localData.slider?.slides?.length || 0;
+                    
+                    if (localSlideCount > 0) {
+                        let html = `
+                            <div class="success">
+                                <strong>✅ Found slides in browser storage!</strong><br><br>
+                                <span class="count">${localSlideCount}</span> slides in browser localStorage<br><br>
+                                These might be the missing banners you added.
+                            </div>
+                            <h3>Slides in Browser Storage:</h3>
+                        `;
+                        
+                        localData.slider.slides.forEach((slide, i) => {
+                            html += `
+                                <div class="slide-item">
+                                    <strong>Slide ${i + 1}:</strong> ${slide.title || 'Untitled'}<br>
+                                    <small>Color: ${slide.bgColor || 'default'}</small>
+                                </div>
+                            `;
+                        });
+                        
+                        lsDiv.innerHTML = html;
+                    } else {
+                        lsDiv.innerHTML = '<div class="warning">⚠️ No slides found in browser storage either.</div>';
+                    }
+                } else {
+                    lsDiv.innerHTML = '<div class="warning">⚠️ No data found in browser storage.</div>';
+                }
+            } catch (error) {
+                lsDiv.innerHTML = '<div class="warning">⚠️ Could not check browser storage.</div>';
+            }
+        }
+        
+        async function recoverFromLocalStorage() {
+            try {
+                const stored = localStorage.getItem('visionCareAdminData') || localStorage.getItem('visionCareData');
+                
+                if (!stored) {
+                    alert('❌ No data found in browser storage!');
+                    return;
+                }
+                
+                const localData = JSON.parse(stored);
+                
+                if (!localData.slider?.slides) {
+                    alert('❌ No slides found in browser storage!');
+                    return;
+                }
+                
+                // Merge with current data
+                const response = await fetch(DATA_SERVER_URL);
+                const currentData = await response.json();
+                
+                // Use localStorage slides (assuming they're more recent)
+                currentData.slider = localData.slider;
+                
+                // Save to file
+                const saveResponse = await fetch(DATA_SERVER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentData)
+                });
+                
+                if (saveResponse.ok) {
+                    const slideCount = currentData.slider.slides.length;
+                    alert(`✅ Successfully recovered ${slideCount} slides from browser storage!\n\nThey are now saved in data.json file.`);
+                    checkStatus();
+                } else {
+                    alert('❌ Failed to save recovered slides!');
+                }
+                
+            } catch (error) {
+                alert('❌ Recovery failed: ' + error.message);
+            }
+        }
+        
+        function showAddForm() {
+            document.getElementById('addBannerForm').style.display = 'block';
+        }
+        
+        function addBanner() {
+            const title = document.getElementById('bannerTitle').value;
+            const color = document.getElementById('bannerColor').value;
+            
+            if (!title) {
+                alert('Please enter a title');
+                return;
+            }
+            
+            const newSlide = {
+                title: title,
+                subtitle: '',
+                bgColor: color,
+                imageSize: { width: 1920, height: 1080 }
+            };
+            
+            allSlides.push(newSlide);
+            
+            updateManualList();
+            
+            document.getElementById('bannerTitle').value = '';
+            alert('✅ Banner added to list! Click "Save All Slides to File" when done.');
+        }
+        
+        function updateManualList() {
+            const listDiv = document.getElementById('manualSlidesList');
+            
+            let html = '<h3>All Slides Ready to Save:</h3>';
+            allSlides.forEach((slide, i) => {
+                html += `
+                    <div class="slide-item">
+                        <strong>Slide ${i + 1}:</strong> ${slide.title || 'Untitled'}
+                        <button onclick="removeSlide(${i})" class="danger" style="padding: 5px 10px; font-size: 12px; float: right;">❌ Remove</button>
+                    </div>
+                `;
+            });
+            
+            listDiv.innerHTML = html;
+        }
+        
+        function removeSlide(index) {
+            allSlides.splice(index, 1);
+            updateManualList();
+        }
+        
+        async function saveAllSlides() {
+            if (allSlides.length === 0) {
+                alert('⚠️ No slides to save!');
+                return;
+            }
+            
+            try {
+                // Get current data
+                const response = await fetch(DATA_SERVER_URL);
+                const data = await response.json();
+                
+                // Update slides
+                data.slider = {
+                    slides: allSlides,
+                    interval: data.slider?.interval || 3
+                };
+                
+                // Save to file
+                const saveResponse = await fetch(DATA_SERVER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (saveResponse.ok) {
+                    alert(`✅ Successfully saved ${allSlides.length} slides to data.json!`);
+                    checkStatus();
+                } else {
+                    alert('❌ Failed to save slides!');
+                }
+                
+            } catch (error) {
+                alert('❌ Save failed: ' + error.message);
+            }
+        }
+        
+        async function verifySave() {
+            const resultDiv = document.getElementById('verifyResult');
+            
+            try {
+                const response = await fetch(DATA_SERVER_URL);
+                const data = await response.json();
+                
+                const slideCount = data.slider?.slides?.length || 0;
+                
+                if (slideCount >= 5) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ VERIFICATION PASSED!</strong><br><br>
+                            Found ${slideCount} slides in data.json file.<br><br>
+                            <button onclick="openWebsite()" class="info">🌐 Open Website to Test Slider</button>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="warning">
+                            ⚠️ Only ${slideCount} slides found.<br>
+                            You mentioned adding 5 banners total.
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="warning">❌ Verification failed: ' + error.message + '</div>';
+            }
+        }
+        
+        function openWebsite() {
+            window.open('index.html', '_blank');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Data to File - Make It Work in All Browsers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 { 
+            color: #667eea; 
+            text-align: center;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+        .card.success {
+            border-left-color: #4CAF50;
+            background: #e8f5e9;
+        }
+        .card.warning {
+            border-left-color: #ff9800;
+            background: #fff3e0;
+        }
+        .card.danger {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        h2 { 
+            color: #453982; 
+            margin-top: 0;
+            font-size: 24px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        button.success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+        button.danger {
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+        }
+        button.info {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        }
+        .result {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 2px solid #2196F3;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .data-preview {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border: 1px solid #ddd;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin: 15px 0;
+        }
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .step-text {
+            flex: 1;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #667eea;
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Export Data to File</h1>
+        <p class="subtitle">Make your data work in ALL browsers (Chrome, Firefox, Edge, etc.)</p>
+        
+        <div class="card">
+            <h2>📊 Current Status</h2>
+            <p>Checking where your data is stored...</p>
+            
+            <div id="statusCheck"></div>
+        </div>
+        
+        <div class="card" id="localStorageSection" style="display:none;">
+            <h2>⚠️ Data Found in Browser Storage Only!</h2>
+            <p>Your data is currently trapped in this browser. Let's export it to the shared data.json file so it works everywhere!</p>
+            
+            <div class="stats-grid" id="browserStats"></div>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <button onclick="exportToFile()" class="success" style="font-size: 18px; padding: 20px 40px;">
+                    ✅ EXPORT TO FILE NOW
+                </button>
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">
+                    This will copy all your data from browser → data.json file
+                </p>
+            </div>
+            
+            <div class="data-preview" id="localDataPreview"></div>
+        </div>
+        
+        <div class="card success" id="fileSection" style="display:none;">
+            <h2>✅ Data Already in File!</h2>
+            <p>Great news! Your data is already saved in data.json and should work in all browsers.</p>
+            
+            <div class="stats-grid" id="fileStats"></div>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <button onclick="testInBrowsers()" class="info">
+                    🧪 Test in Multiple Browsers
+                </button>
+                <button onclick="viewFileData()" class="info">
+                    👁️ View File Data
+                </button>
+            </div>
+        </div>
+        
+        <div class="card warning" id="noDataSection" style="display:none;">
+            <h2>⚠️ No Data Found Anywhere!</h2>
+            <p>You haven't added any data yet, or it was lost.</p>
+            <button onclick="openAdminPanel()" class="info">
+                ➕ Add Data in Admin Panel
+            </button>
+        </div>
+        
+        <div class="card" id="exportResult" style="display:none;">
+            <h2>📋 Export Result</h2>
+            <div id="exportResultContent"></div>
+        </div>
+        
+        <div class="card">
+            <h2>📖 How This Works</h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-text">
+                    <strong>Add data in admin panel</strong><br>
+                    You add banners, services, about info, etc.
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-text">
+                    <strong>Data saves to browser localStorage</strong><br>
+                    This is temporary and only visible in THIS browser
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-text">
+                    <strong>Server must be running to save to file</strong><br>
+                    <code>START-SERVER.bat</code> enables saving to <code>data.json</code>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-text">
+                    <strong>data.json file is the source of truth</strong><br>
+                    ALL browsers (Chrome, Firefox, Edge, Safari) read from this file
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-text">
+                    <strong>Your data works everywhere!</strong><br>
+                    Open your website in any browser - same data appears
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DATA_SERVER_URL = 'http://localhost:3456/api/data';
+        
+        // Check status on load
+        window.addEventListener('load', checkStatus);
+        
+        async function checkStatus() {
+            const statusDiv = document.getElementById('statusCheck');
+            statusDiv.innerHTML = '<p>📡 Checking server and data sources...</p>';
+            
+            try {
+                // Check if server is running
+                const response = await fetch(DATA_SERVER_URL);
+                const fileData = await response.json();
+                
+                // Check localStorage
+                const localStored = localStorage.getItem('visionCareAdminData') || localStorage.getItem('visionCareData');
+                const localData = localStored ? JSON.parse(localStored) : null;
+                
+                // Count items in each
+                const fileCounts = countItems(fileData);
+                const localCounts = localData ? countItems(localData) : { total: 0 };
+                
+                statusDiv.innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card" style="border-color: #4CAF50;">
+                            <div class="stat-number" style="color: #4CAF50;">${fileCounts.total}</div>
+                            <div class="stat-label">Items in data.json file</div>
+                        </div>
+                        <div class="stat-card" style="border-color: #ff9800;">
+                            <div class="stat-number" style="color: #ff9800;">${localCounts.total}</div>
+                            <div class="stat-label">Items in browser storage</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Determine which section to show
+                if (localCounts.total > fileCounts.total) {
+                    // More data in browser than file - need to export
+                    showBrowserDataSection(localData, fileData, localCounts);
+                } else if (fileCounts.total > 0) {
+                    // Data is in file - all good!
+                    showFileDataSection(fileData, fileCounts);
+                } else {
+                    // No data anywhere
+                    showNoDataSection();
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="card danger">
+                        <h2>❌ Server Not Running!</h2>
+                        <p>The data server is not running. Please start it first.</p>
+                        <button onclick="alert('1. Close this page\\n2. Double-click START-SERVER.bat\\n3. Keep server window open\\n4. Refresh this page')">
+                            🛑 How to Start Server
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        function countItems(data) {
+            const counts = {
+                slides: data.slider?.slides?.length || 0,
+                frames: (data.frames?.latest?.length || 0) + (data.frames?.trending?.length || 0),
+                services: data.services?.length || 0,
+                brands: data.brands?.length || 0,
+                offers: data.offers?.items?.length || 0,
+                social: data.social?.length || 0,
+                hasAbout: data.about && Object.keys(data.about).length > 0 ? 1 : 0,
+                hasContact: data.contact && Object.keys(data.contact).length > 0 ? 1 : 0,
+                hasLocation: data.location && Object.keys(data.location).length > 0 ? 1 : 0,
+                hasHero: data.hero && Object.keys(data.hero).length > 0 ? 1 : 0,
+                hasColors: data.colors ? 1 : 0,
+                hasLogos: data.logos ? 1 : 0
+            };
+            
+            counts.total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+            return counts;
+        }
+        
+        function showBrowserDataSection(localData, fileData, counts) {
+            document.getElementById('localStorageSection').style.display = 'block';
+            
+            const statsHtml = `
+                <div class="stat-card">
+                    <div class="stat-number">${counts.slides}</div>
+                    <div class="stat-label">Slider Banners</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${counts.frames}</div>
+                    <div class="stat-label">Frames</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${counts.services}</div>
+                    <div class="stat-label">Services</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${counts.brands}</div>
+                    <div class="stat-label">Brands</div>
+                </div>
+            `;
+            
+            document.getElementById('browserStats').innerHTML = statsHtml;
+            
+            // Preview local data
+            const preview = {
+                slider: localData.slider,
+                about: localData.about,
+                contact: localData.contact,
+                services: localData.services?.length || 0,
+                frames: counts.frames
+            };
+            
+            document.getElementById('localDataPreview').textContent = 
+                'Data in browser:\\n' + JSON.stringify(preview, null, 2);
+        }
+        
+        function showFileDataSection(fileData, counts) {
+            document.getElementById('fileSection').style.display = 'block';
+            
+            const statsHtml = `
+                <div class="stat-card">
+                    <div class="stat-number">${counts.slides}</div>
+                    <div class="stat-label">Slider Banners</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${counts.frames}</div>
+                    <div class="stat-label">Frames</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${counts.services}</div>
+                    <div class="stat-label">Services</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${counts.brands}</div>
+                    <div class="stat-label">Brands</div>
+                </div>
+            `;
+            
+            document.getElementById('fileStats').innerHTML = statsHtml;
+        }
+        
+        function showNoDataSection() {
+            document.getElementById('noDataSection').style.display = 'block';
+        }
+        
+        async function exportToFile() {
+            const resultDiv = document.getElementById('exportResult');
+            const resultContent = document.getElementById('exportResultContent');
+            
+            resultDiv.style.display = 'block';
+            resultContent.innerHTML = '<p>⏳ Exporting data to file...</p>';
+            
+            try {
+                // Get data from localStorage
+                const localStored = localStorage.getItem('visionCareAdminData') || localStorage.getItem('visionCareData');
+                
+                if (!localStored) {
+                    throw new Error('No data found in browser storage!');
+                }
+                
+                const localData = JSON.parse(localStored);
+                
+                // Save to file via server
+                const response = await fetch(DATA_SERVER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(localData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to save to file');
+                }
+                
+                const result = await response.json();
+                
+                // Verify by reading back
+                const verifyResponse = await fetch(DATA_SERVER_URL);
+                const savedData = await verifyResponse.json();
+                const savedCounts = countItems(savedData);
+                
+                resultContent.innerHTML = `
+                    <div class="card success">
+                        <h2>✅ EXPORT SUCCESSFUL!</h2>
+                        <p>Your data has been saved to data.json file!</p>
+                        
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-number">${savedCounts.slides}</div>
+                                <div class="stat-label">Slider Banners</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number">${savedCounts.frames}</div>
+                                <div class="stat-label">Frames</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number">${savedCounts.services}</div>
+                                <div class="stat-label">Services</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number">${savedCounts.brands}</div>
+                                <div class="stat-label">Brands</div>
+                            </div>
+                        </div>
+                        
+                        <p style="margin-top: 20px;"><strong>🎉 Your data now works in ALL browsers!</strong></p>
+                        <ul style="margin-top: 10px; line-height: 1.8;">
+                            <li>✅ Chrome can see your data</li>
+                            <li>✅ Firefox can see your data</li>
+                            <li>✅ Edge can see your data</li>
+                            <li>✅ Safari can see your data</li>
+                            <li>✅ Any other browser can see your data</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button onclick="testInBrowsers()" class="info">🧪 Test in Browsers</button>
+                        <button onclick="location.reload()" class="success">🔄 Refresh Status</button>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultContent.innerHTML = `
+                    <div class="card danger">
+                        <h2>❌ EXPORT FAILED!</h2>
+                        <p>Error: ${error.message}</p>
+                        <ul style="margin-top: 10px; line-height: 1.8;">
+                            <li>Make sure server is running (START-SERVER.bat)</li>
+                            <li>Check browser console (F12) for errors</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+        
+        function testInBrowsers() {
+            alert('🧪 TESTING IN BROWSERS\n\n1. Open index.html in Chrome\n2. Open index.html in Firefox\n3. Open index.html in Edge\n\nAll should show the same data!');
+        }
+        
+        function viewFileData() {
+            window.open('data.json', '_blank');
+        }
+        
+        function openAdminPanel() {
+            window.open('website-v2/admin.html', '_blank');
+        }
+    </script>
+</body>
+</html>
