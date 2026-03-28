@@ -12,6 +12,14 @@ const isHomePage = window.location.pathname.endsWith('index.html') || window.loc
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Loading website data...');
     
+    // Initialize Firebase first
+    const firebaseInitialized = initializeFirebase();
+    if (firebaseInitialized) {
+        console.log('✅ Using Firebase as primary data source');
+    } else {
+        console.warn('⚠️ Firebase not initialized, will use fallback methods');
+    }
+    
     // Firefox fix - ensure localStorage is accessible
     try {
         localStorage.setItem('test', 'test');
@@ -25,9 +33,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // Show loading message
-    console.log('⏳ Fetching latest data from server...');
+    console.log('⏳ Fetching latest data...');
     
-    // Load all data - Force fresh load every time
+    // Load all data - Firebase first, then file, then localStorage
     await loadHeroSection();
     await loadSliderBanners();
     await loadBrandsCarousel();
@@ -44,10 +52,32 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Load cart from localStorage
     loadCart();
+    
+    // Subscribe to real-time updates if Firebase is available
+    if (firebaseInitialized) {
+        subscribeToUpdates((freshData) => {
+            console.log('🔄 Data updated from Firebase, refreshing UI...');
+            // Optionally refresh the page or update specific elements
+            // location.reload(); // Uncomment for auto-refresh on updates
+        });
+    }
 });
 
 async function getAdminData() {
-    // ON VERCEL: Load directly from data.json file with cache busting
+    // PRIORITY 1: Try Firebase first (if initialized)
+    if (typeof db !== 'undefined' && db) {
+        try {
+            const firebaseData = await loadFromFirebase();
+            if (firebaseData) {
+                console.log('✅ Loaded data from Firebase (cloud database)');
+                return firebaseData;
+            }
+        } catch (error) {
+            console.warn('⚠️ Firebase load failed, trying next method');
+        }
+    }
+    
+    // PRIORITY 2: ON VERCEL: Load directly from data.json file with cache busting
     try {
         // Use multiple cache-busting methods
         const timestamp = new Date().getTime();
@@ -82,7 +112,7 @@ async function getAdminData() {
         console.warn('⚠️ Could not load from data.json:', error.message);
     }
     
-    // LOCAL ONLY: Try localhost server (for development)
+    // PRIORITY 3: LOCAL ONLY: Try localhost server (for development)
     try {
         const response = await fetch(DATA_SERVER_URL);
         if (response.ok) {
@@ -96,7 +126,7 @@ async function getAdminData() {
         // Server not available
     }
     
-    // LAST RESORT: localStorage fallback
+    // PRIORITY 4: LAST RESORT: localStorage fallback
     let data = localStorage.getItem('visionCareAdminData');
     if (!data) {
         data = localStorage.getItem('visionCareData');

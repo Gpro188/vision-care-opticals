@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔄 Firebase Migration Tool - Vision Care</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 30px auto; padding: 20px; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #453982; }
+        .status { padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid; }
+        .status.info { background: #e3f2fd; border-color: #2196F3; color: #1976D2; }
+        .status.success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .status.error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        button { background: #453982; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 10px 5px; }
+        button:hover { background: #2d2555; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .log { background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 13px; max-height: 400px; overflow-y: auto; margin: 15px 0; }
+        .progress-bar { width: 100%; height: 30px; background: #e0e0e0; border-radius: 15px; overflow: hidden; margin: 15px 0; display: none; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Firebase Data Migration Tool</h1>
+        <p>Migrate from single-document to split storage (avoids 1MB limit)</p>
+        
+        <div id="initialStatus" class="status info">
+            <strong>ℹ️ Loading...</strong><br>
+            Please wait while Firebase initializes...
+        </div>
+        
+        <button id="migrateBtn" disabled>⏳ Loading...</button>
+        <button id="verifyBtn" disabled>✅ Verify Migration</button>
+        
+        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="log" id="log"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        // Global variables
+        let db;
+        let migrationComplete = false;
+        
+        // Logging function
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            if (!logDiv) return;
+            const logItem = document.createElement('div');
+            logItem.className = 'log-item';
+            logItem.style.cssText = 'margin: 5px 0; padding: 5px; border-bottom: 1px solid #eee;';
+            const timestamp = new Date().toLocaleTimeString();
+            logItem.innerHTML = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logItem);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateProgress(percent) {
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            if (progressBar && progressFill) {
+                progressBar.style.display = 'block';
+                progressFill.style.width = percent + '%';
+            }
+        }
+        
+        // Check current state
+        async function checkCurrentState() {
+            log('📊 Checking database state...');
+            
+            try {
+                const oldDoc = await db.collection('websiteData').doc('visionCare').get();
+                const metadataDoc = await db.collection('websiteData').doc('metadata').get();
+                const imageDataDoc = await db.collection('imageData').doc('allImages').get();
+                
+                if (metadataDoc.exists && imageDataDoc.exists) {
+                    log('✅ Already migrated to split storage!', 'success');
+                    document.getElementById('initialStatus').className = 'status success';
+                    document.getElementById('initialStatus').innerHTML = '<strong>✅ Already Migrated!</strong><br>Your data is already in split storage format.';
+                    document.getElementById('migrateBtn').disabled = true;
+                    document.getElementById('migrateBtn').textContent = '✓ Migrated';
+                    document.getElementById('verifyBtn').disabled = false;
+                    migrationComplete = true;
+                } else if (oldDoc.exists) {
+                    const oldData = oldDoc.data();
+                    const oldSize = JSON.stringify(oldData).length;
+                    log(`📄 Found legacy data: ${(oldSize / 1024).toFixed(2)} KB`, 'info');
+                    document.getElementById('initialStatus').className = 'status info';
+                    document.getElementById('initialStatus').innerHTML = `<strong>ℹ️ Ready to migrate</strong><br>Found ${(oldSize / 1024).toFixed(2)} KB of data in legacy format.`;
+                    document.getElementById('migrateBtn').disabled = false;
+                    document.getElementById('migrateBtn').textContent = '🚀 Start Migration';
+                } else {
+                    log('⚠️ No data found in Firebase', 'error');
+                    document.getElementById('initialStatus').className = 'status error';
+                    document.getElementById('initialStatus').innerHTML = '<strong>⚠️ No Data</strong><br>No data found in Firebase.';
+                    document.getElementById('migrateBtn').disabled = true;
+                }
+            } catch (error) {
+                log('❌ Error checking state: ' + error.message, 'error');
+            }
+        }
+        
+        // Migration function
+        async function performMigration() {
+            const btn = document.getElementById('migrateBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Migrating...';
+            
+            log('🚀 Starting migration...');
+            updateProgress(10);
+            
+            try {
+                // Load old data
+                log('📥 Loading legacy data...');
+                const oldDoc = await db.collection('websiteData').doc('visionCare').get();
+                
+                if (!oldDoc.exists) {
+                    throw new Error('No data found');
+                }
+                
+                const oldData = oldDoc.data();
+                const oldSize = JSON.stringify(oldData).length;
+                log(`✅ Loaded ${(oldSize / 1024).toFixed(2)} KB`, 'success');
+                updateProgress(30);
+                
+                // Split data
+                log('✂️ Separating data...');
+                const imageData = {
+                    slider: oldData.slider || {},
+                    frames: oldData.frames || {},
+                    brands: oldData.brands || {},
+                    services: oldData.services || {},
+                    logos: oldData.logos || {},
+                    about: oldData.about || {},
+                    offers: oldData.offers || {}
+                };
+                
+                const metadata = {
+                    hero: oldData.hero || {},
+                    contact: oldData.contact || {},
+                    social: oldData.social || {},
+                    location: oldData.location || {},
+                    colors: oldData.colors || {},
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                    version: '2.0-migrated'
+                };
+                
+                const imageSize = JSON.stringify(imageData).length;
+                const metadataSize = JSON.stringify(metadata).length;
+                log(`📊 Images: ${(imageSize / 1024).toFixed(2)} KB | Metadata: ${(metadataSize / 1024).toFixed(2)} KB`);
+                updateProgress(50);
+                
+                // Save metadata
+                log('💾 Saving metadata...');
+                await db.collection('websiteData').doc('metadata').set(metadata);
+                log('✅ Metadata saved', 'success');
+                updateProgress(70);
+                
+                // Save images
+                log('💾 Saving image data...');
+                await db.collection('imageData').doc('allImages').set(imageData);
+                log('✅ Image data saved', 'success');
+                updateProgress(90);
+                
+                // Complete
+                log('🎉 Migration complete!', 'success');
+                updateProgress(100);
+                
+                document.getElementById('initialStatus').className = 'status success';
+                document.getElementById('initialStatus').innerHTML = '<strong>✅ Success!</strong><br>Data migrated to split storage.';
+                document.getElementById('migrateBtn').textContent = '✓ Done';
+                document.getElementById('verifyBtn').disabled = false;
+                migrationComplete = true;
+                
+            } catch (error) {
+                log('❌ Migration failed: ' + error.message, 'error');
+                document.getElementById('initialStatus').className = 'status error';
+                document.getElementById('initialStatus').innerHTML = '<strong>❌ Failed</strong><br>' + error.message;
+                btn.disabled = false;
+                btn.textContent = '🔄 Retry Migration';
+            }
+        }
+        
+        // Verification function
+        async function verifyMigration() {
+            log('🔍 Verifying migration...');
+            
+            try {
+                const metadataDoc = await db.collection('websiteData').doc('metadata').get();
+                const imageDataDoc = await db.collection('imageData').doc('allImages').get();
+                
+                if (!metadataDoc.exists || !imageDataDoc.exists) {
+                    log('❌ Verification failed: Missing documents', 'error');
+                    return;
+                }
+                
+                const metadata = metadataDoc.data();
+                const imageData = imageDataDoc.data();
+                
+                const frameCount = (imageData.frames?.latest?.length || 0) + (imageData.frames?.trending?.length || 0);
+                const slideCount = imageData.slider?.slides?.length || 0;
+                const brandCount = imageData.brands?.length || 0;
+                const serviceCount = imageData.services?.length || 0;
+                
+                log('✅ Verification successful!', 'success');
+                log(`📊 Version: ${metadata.version || 'unknown'}`);
+                log(`📊 Slides: ${slideCount} | Frames: ${frameCount} | Brands: ${brandCount} | Services: ${serviceCount}`);
+                
+            } catch (error) {
+                log('❌ Verification failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Page loaded, initializing Firebase...');
+            
+            try {
+                const initialized = initializeFirebase();
+                
+                if (initialized) {
+                    db = firebase.firestore();
+                    log('✅ Firebase initialized', 'success');
+                    
+                    // Check state
+                    checkCurrentState();
+                    
+                    // Attach button handlers
+                    document.getElementById('migrateBtn').addEventListener('click', function() {
+                        if (!migrationComplete) {
+                            performMigration();
+                        }
+                    });
+                    
+                    document.getElementById('verifyBtn').addEventListener('click', verifyMigration);
+                    
+                    console.log('✅ Button handlers attached');
+                    
+                } else {
+                    throw new Error('Firebase initialization returned false');
+                }
+            } catch (error) {
+                console.error('❌ Initialization error:', error);
+                document.getElementById('initialStatus').className = 'status error';
+                document.getElementById('initialStatus').innerHTML = '<strong>❌ Error</strong><br>' + error.message + '<br><br>Check browser console (F12) for details.';
+                document.getElementById('migrateBtn').disabled = true;
+                document.getElementById('migrateBtn').textContent = '❌ Failed';
+            }
+        });
+    </script>
+</body>
+</html>

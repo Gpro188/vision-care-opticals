@@ -1,14 +1,68 @@
-// Simple Admin Panel - Automatic File Save!
+// Image compression function - reduces image size while maintaining quality
+function compressImage(base64, maxWidth = 1920, maxHeight = 1080, quality = 0.7) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            
+            // Calculate new dimensions while maintaining aspect ratio
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+            if (height > maxHeight) {
+                width = (width * maxHeight) / height;
+                height = maxHeight;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Compress to JPEG with quality setting
+            const compressed = canvas.toDataURL('image/jpeg', quality);
+            console.log(`✅ Image compressed: ${img.width}x${img.height} → ${width}x${height}, size: ${(base64.length / 1024).toFixed(2)} KB → ${(compressed.length / 1024).toFixed(2)} KB`);
+            resolve(compressed);
+        };
+        img.src = base64;
+    });
+}
+
+// Simple Admin Panel - Automatic Firebase Save!
 
 let adminData = {};
-const DATA_SERVER_URL = 'http://localhost:3456/api/data'; // Local server for file save
+const DATA_SERVER_URL = 'http://localhost:3456/api/data'; // Local server for file save (fallback)
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('🎛️ Admin panel loaded');
     
-    // Check server status
-    await checkServerStatus();
+    // Initialize Firebase first
+    const firebaseInitialized = initializeFirebase();
+    if (firebaseInitialized) {
+        console.log('✅ Firebase is active - changes will sync everywhere!');
+    } else {
+        console.warn('⚠️ Firebase not initialized - will use local storage only');
+    }
+    
+    // Check server status (only if Firebase is not available)
+    if (!firebaseInitialized) {
+        await checkServerStatus();
+    } else {
+        // Update UI to show Firebase is active
+        const statusBox = document.getElementById('serverStatus');
+        const statusIcon = document.getElementById('serverStatusIcon');
+        const statusText = document.getElementById('serverStatusText');
+        if (statusBox && statusIcon && statusText) {
+            statusIcon.textContent = '🔥';
+            statusText.innerHTML = '<strong>Firebase Active!</strong> Changes sync everywhere in real-time';
+            statusBox.style.background = '#d4edda';
+            statusBox.style.border = '1px solid #c3e6cb';
+        }
+    }
     
     // Firefox fix - ensure localStorage is accessible
     try {
@@ -63,7 +117,22 @@ async function checkServerStatus() {
 }
 
 async function loadExistingData() {
-    // Try to load from file server first (most recent)
+    // PRIORITY 1: Try loading from Firebase first
+    if (typeof db !== 'undefined' && db) {
+        try {
+            const firebaseData = await loadFromFirebase();
+            if (firebaseData && Object.keys(firebaseData).length > 0) {
+                adminData = firebaseData;
+                console.log('✅ Loaded data from Firebase');
+                populateForms();
+                return;
+            }
+        } catch (error) {
+            console.warn('⚠️ Firebase load failed, trying next method');
+        }
+    }
+    
+    // PRIORITY 2: Try to load from file server (most recent local copy)
     const loadedFromFile = await loadDataFromFile();
     
     if (!loadedFromFile) {
@@ -161,31 +230,25 @@ function populateForms() {
     updateDashboard();
 }
 
-async function saveData() {
-    console.log('💾 Starting save process...');
-    console.log('Current adminData.about:', adminData.about);
+async function saveData(section = 'all') {
+    console.log('💾 Starting save process for section:', section);
     
-    // Always save to localStorage
-    try {
-        localStorage.setItem('visionCareAdminData', JSON.stringify(adminData));
-        localStorage.setItem('visionCareData', JSON.stringify(adminData));
-        console.log('✅ Data saved to localStorage');
-    } catch (error) {
-        console.error('❌ Error saving to localStorage:', error);
-    }
-    
-    // ALSO save to local file automatically via server
-    const fileSaved = await saveToFile();
-    
-    if (fileSaved) {
-        console.log('✅ Data saved to file successfully');
-        showNotification('Saved successfully! ✅');
-        updateDashboard();
-        return true;
+    // PRIORITY 1: Save to Firebase if available (cloud database)
+    if (typeof db !== 'undefined' && db) {
+        const firebaseSaved = await saveToFirebase(adminData, section);
+        if (firebaseSaved) {
+            console.log('✅ Data saved to Firebase successfully!');
+            showNotification('Saved to cloud! ✅ Changes sync everywhere!');
+            updateDashboard();
+            return true;
+        } else {
+            console.error('❌ Firebase save failed');
+            showNotification('⚠️ Firebase save failed - check console');
+            return false;
+        }
     } else {
-        console.error('❌ Failed to save to file');
-        showNotification('⚠️ Saved to browser only (server not running)');
-        updateDashboard();
+        console.error('❌ Firebase not available');
+        showNotification('⚠️ Firebase not connected - check internet');
         return false;
     }
 }
@@ -599,17 +662,28 @@ function addSlide() {
         }
         
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             // Get image dimensions
             const img = new Image();
-            img.onload = () => {
-                slide.bgImage = event.target.result;
-                slide.imageSize = {
-                    width: img.width,
-                    height: img.height
-                };
-                completeAddSlide(slide);
-                showNotification(`Banner added! Size: ${img.width}x${img.height}px ✅`);
+            img.onload = async () => {
+                // COMPRESS IMAGE BEFORE SAVING!
+                try {
+                    const compressedImage = await compressImage(event.target.result, 1920, 1080, 0.7);
+                    slide.bgImage = compressedImage;
+                    slide.imageSize = {
+                        width: img.width,
+                        height: img.height
+                    };
+                    completeAddSlide(slide);
+                    showNotification(`Banner added! Compressed from ${(event.target.result.length / 1024).toFixed(2)} KB to ${(compressedImage.length / 1024).toFixed(2)} KB ✅`);
+                } catch (error) {
+                    console.error('Compression failed:', error);
+                    // Fallback: save without compression
+                    slide.bgImage = event.target.result;
+                    slide.imageSize = { width: img.width, height: img.height };
+                    completeAddSlide(slide);
+                    showNotification(`Banner added! Size: ${img.width}x${img.height}px (compression failed)`);
+                }
             };
             img.src = event.target.result;
         };
