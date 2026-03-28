@@ -24,7 +24,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
     
-    // Load all data
+    // Show loading message
+    console.log('⏳ Fetching latest data from server...');
+    
+    // Load all data - Force fresh load every time
     await loadHeroSection();
     await loadSliderBanners();
     await loadBrandsCarousel();
@@ -37,23 +40,46 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadLogos(); // Load uploaded logos
     await loadOfferSlider(); // Load offer slider if active
     
+    console.log('✅ All data loaded successfully!');
+    
     // Load cart from localStorage
     loadCart();
 });
 
 async function getAdminData() {
-    // ON VERCEL: Load directly from data.json file
+    // ON VERCEL: Load directly from data.json file with cache busting
     try {
-        const response = await fetch('data.json?v=' + new Date().getTime()); // Cache buster
+        // Use multiple cache-busting methods
+        const timestamp = new Date().getTime();
+        const random = Math.random();
+        const cacheBuster = `?v=${timestamp}&r=${random}`;
+        
+        console.log('📡 Fetching data.json with cache buster:', cacheBuster);
+        
+        const response = await fetch('data.json' + cacheBuster, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
+        
         if (response.ok) {
             const data = await response.json();
             if (data && Object.keys(data).length > 0) {
-                console.log('✅ Loaded data from data.json file');
+                console.log('✅ Loaded fresh data from data.json file');
+                console.log('📊 Data contains:', Object.keys(data).join(', '));
                 return data;
+            } else {
+                console.warn('⚠️ data.json is empty');
             }
+        } else {
+            console.error('❌ Failed to load data.json, status:', response.status);
         }
     } catch (error) {
-        console.warn('Could not load from data.json:', error);
+        console.warn('⚠️ Could not load from data.json:', error.message);
     }
     
     // LOCAL ONLY: Try localhost server (for development)
@@ -92,7 +118,7 @@ async function getAdminData() {
     
     try {
         const parsed = JSON.parse(data);
-        console.log('✅ Loaded data from localStorage');
+        console.log('✅ Loaded data from localStorage (cached version)');
         return parsed;
     } catch (e) {
         console.error('❌ Error parsing admin data:', e);
@@ -247,18 +273,28 @@ async function loadServices() {
         return;
     }
     
-    data.services.forEach(service => {
+    data.services.forEach((service, index) => {
         const serviceCard = document.createElement('div');
         serviceCard.className = 'service-card';
+        
+        // Check if description is long (more than 100 characters)
+        const isLongText = service.description && service.description.length > 100;
+        const shortDesc = isLongText ? service.description.substring(0, 100) + '...' : (service.description || '');
+        
         serviceCard.innerHTML = `
             ${service.image ? `<img src="${service.image}" alt="${service.title}" class="service-image">` : ''}
             <h3>${service.title}</h3>
-            <p>${service.description || ''}</p>
+            <div class="service-text-container">
+                <p class="service-description" id="serviceDesc-${index}">
+                    ${shortDesc}
+                </p>
+                ${isLongText ? `<button class="read-more-btn" onclick="toggleReadMore(${index})">Read More</button>` : ''}
+            </div>
         `;
         servicesGrid.appendChild(serviceCard);
     });
     
-    console.log(`✅ Loaded ${data.services.length} services with images`);
+    console.log(`✅ Loaded ${data.services.length} services with read more functionality`);
 }
 
 async function loadAboutSection() {
@@ -356,25 +392,23 @@ function renderBrands(brandList, container) {
 
 async function loadSocialMedia() {
     const data = await getAdminData();
-    const socialContainer = document.getElementById('socialMedia');
     const footerSocial = document.getElementById('footerSocial');
     
+    // Only load social media in footer (not in contact section)
     if (!data || !data.social || data.social.length === 0) {
-        // Default social links
+        // Default social links for footer only
         const defaultSocial = [
             { platform: 'facebook', icon: '📘', url: '#' },
             { platform: 'instagram', icon: '📷', url: '#' },
             { platform: 'twitter', icon: '🐦', url: '#' },
             { platform: 'whatsapp', icon: '💬', url: '#' }
         ];
-        renderSocialLinks(defaultSocial, socialContainer);
         renderSocialLinks(defaultSocial, footerSocial);
         return;
     }
     
-    renderSocialLinks(data.social, socialContainer);
     renderSocialLinks(data.social, footerSocial);
-    console.log('✅ Loaded Social Media links');
+    console.log('✅ Loaded Social Media links in footer only');
 }
 
 function renderSocialLinks(socialList, container) {
@@ -438,6 +472,35 @@ function filterFrames(category) {
     
     // Reload frames with filter
     loadFrames(category);
+}
+
+// Read More Toggle Function for Services
+function toggleReadMore(index) {
+    const descElement = document.getElementById(`serviceDesc-${index}`);
+    const serviceCard = descElement.closest('.service-card');
+    const readMoreBtn = serviceCard.querySelector('.read-more-btn');
+    
+    if (!descElement || !readMoreBtn) return;
+    
+    // Get the full description from the data
+    const data = getAdminData();
+    if (!data || !data.services || !data.services[index]) return;
+    
+    const fullDescription = data.services[index].description || '';
+    const shortDescription = fullDescription.substring(0, 100) + '...';
+    
+    // Toggle expanded state
+    if (serviceCard.classList.contains('text-expanded')) {
+        // Collapse
+        descElement.textContent = shortDescription;
+        readMoreBtn.textContent = 'Read More';
+        serviceCard.classList.remove('text-expanded');
+    } else {
+        // Expand
+        descElement.textContent = fullDescription;
+        readMoreBtn.textContent = 'Read Less';
+        serviceCard.classList.add('text-expanded');
+    }
 }
 
 // Cart functions
